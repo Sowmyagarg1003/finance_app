@@ -224,6 +224,7 @@ class AuthService {
 
     List<dynamic> currentUserHistory = currentUserSnapshot!['history'];
     List<dynamic> otherUserHistory = otherUserSnapshot.data()!['history'];
+    final transactionId = generateTransactionId();
 
     if (transactionType == 'out') {
       currentUserHistory.add({
@@ -232,6 +233,7 @@ class AuthService {
         'transaction_type': transactionType,
         'user_id': otherUserId,
         'username': otherUserSnapshot.data()!['username'],
+        'transactionId': transactionId,
       });
 
       otherUserHistory.add({
@@ -239,7 +241,8 @@ class AuthService {
         'date': DateTime.now(),
         'transaction_type': 'in',
         'user_id': currentUserId,
-        'username': currentUserSnapshot['username']
+        'username': currentUserSnapshot['username'],
+        'transactionId': transactionId,
       });
     } else {
       currentUserHistory.add({
@@ -247,7 +250,8 @@ class AuthService {
         'date': DateTime.now(),
         'transaction_type': 'in',
         'user_id': otherUserId,
-        'username': otherUserSnapshot.data()!['username']
+        'username': otherUserSnapshot.data()!['username'],
+        'transactionId': transactionId,
       });
 
       otherUserHistory.add({
@@ -256,6 +260,7 @@ class AuthService {
         'transaction_type': transactionType,
         'user_id': currentUserId,
         'username': currentUserSnapshot['username'],
+        'transactionId': transactionId,
       });
     }
 
@@ -317,6 +322,19 @@ class AuthService {
       }
     }
     return totalSpending;
+  }
+
+  Future<num> getTransactionCount(String userId) async {
+    final currentUser = await getCurrentUser();
+    final currentUserSnapshot = await getCurrentUserData();
+    List<dynamic> currentUserHistory = currentUserSnapshot!['history'] ?? [];
+    num count = 0;
+    for (var el in currentUserHistory) {
+      if (el['transaction_type'] == 'out') {
+        count += 1;
+      }
+    }
+    return count;
   }
 
   Future<List> getTransactionHistoryByDate(
@@ -425,6 +443,13 @@ class AuthService {
     }
 
     return cardNo;
+  }
+
+  String generateTransactionId() {
+    final random = Random();
+    final int min = 100000000;
+    final int max = 999999999;
+    return (min + random.nextInt(max - min + 1)).toString();
   }
 
   Future<bool> checkAccount(String accountNo) async {
